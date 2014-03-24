@@ -1,0 +1,57 @@
+CLO
+	IN	00	;
+	CMP	AL,24	; On compare l'entré avec le signe $
+	JZ	hexa	; si oui on se dirige vers hexa
+	CMP	AL,00	; si "rien" on se dirige vers deci
+	JZ	deci	;
+	CALL	F8	; Appelle de la fonction d'erreur (fin du programme)
+hexa:
+	CALL	F0	; fonction de saisie
+
+deci:
+	MOV	AL,30	;
+	POP	AL	;
+ORG	7A	; fonction dec->hexa (même octet)
+	POP	AL	; les unités
+	POP	BL	; les dizaines
+	MUL	BL,A	; (dizaine, donc 10 fois le nombres pour équivalent unité)
+	ADD	AL,BL	;
+	PUSH	AL	;
+	RET	;
+ORG	87	; fonction de supression
+	POP	AL	;
+	RET	;
+ORG	8B	; fonction de saisie
+	MOV	DL,0	; Compteur de caractères entrées
+	infiniteLoop:
+	IN	00	;
+	CMP	AL,0D	; On vérifie si retour de chariot
+	JZ	finSaisie	;
+	CMP	AL,08	; On vérifie si backspace
+	JZ	del	;
+	CMP	AL,43	; On vérifie si "C"
+	JZ	reset	;
+	PUSH	AL	;
+	INC	DL	;
+	JMP infiniteLoop	;
+	finSaisie:
+	PUSH	DL	; On met en pile le nombre de saisie
+	RET	;
+	del:
+		CALL	80	;
+		DEC	DL	;
+		JMP	infiniteLoop	;
+	reset:
+		CMP	DL,0	; Si le nombre de saisie est 0 (condition d'abord pour éviter la supression si rien)
+		JZ	infiniteLoop	;
+		CALL	80	;
+		JMP	reset	;
+
+ORG	B7	;
+DB	"E"	;
+ORG	B8	; Fonction affiche erreur, le last, on peut pas aller plus loin
+	MOV	AL,[F7]	; AL non sauvegarder car on fait un reset général (oui je sais ceymal)
+	MOV	[C0],AL	; Affichage de l'erreur
+	IRET	; On stop le programme
+	
+END	
